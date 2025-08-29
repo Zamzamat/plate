@@ -43,4 +43,32 @@ def fit_display_width(s: str, target: int) -> str:
             break
     out = "".join(acc)
     # pad if short
-    pad = target
+    pad = target - (wcswidth(out) if wcswidth(out) >= 0 else len(out))
+    if pad > 0:
+        out += " " * pad
+    return out
+
+INPUT  = "words.txt"                 # format: index binary word
+OUTPUT = "words_fixed16.txt"
+
+rows = []
+with open(INPUT, "r", encoding="utf-8") as f:
+    for line in f:
+        parts = line.strip().split()
+        if len(parts) < 3:
+            continue
+        idx, binary, word = parts[0], parts[1], parts[2]
+
+        b6  = convertText(word)           # Braille6
+        b8  = to_braille8(word)           # Braille8 w/ parity
+        sb8 = " ".join(list(b8[:4]))      # ShortBraille8 (first 4 cells, spaced)
+        nums4 = " ".join(dots_numbers(ord(ch)-0x2800) for ch in b8[:4])  # first 4 cells only
+
+        rows.append([idx, binary, word, b6, b8, sb8, nums4])
+
+with open(OUTPUT, "w", encoding="utf-8") as out:
+    for r in rows:
+        cells16 = [fit_display_width(c, WIDTH) for c in r]
+        out.write(SEP.join(cells16) + "\n")
+
+print(f"✅ Aligned (fixed 16) table saved to {OUTPUT}")
